@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Mi humilde replica del juego de arcade 1942</title>
+</head>
+<body>
+	<style type="text/css">
+		#ocean {
+			background-image: url('img1/ocean.jpg');
+			width: 1280px;
+			height: 720px;
+		}
+		.players {
+			position: absolute;
+			background-image: url(img1/player.png);
+			width: 117px;
+			height: 75px;
+		}
+		.enemy {
+			background-image: url(img1/enemy.png);
+			position: absolute;
+			width: 101px;
+			height: 75px;
+		}
+		.missile {
+			position: absolute;
+			background-color: yellow;
+			width: 8px;
+			height: 8px;
+		}
+		
+	</style>
+	<div id="ocean">
+		<div id="players"></div>
+		<div id="enemies"></div>
+		<div id="missile"></div>
+		<audio id="SonidoImpacto" src="Sonido disparo.mp3"></audio>
+		<img id="img_boom" src="./img1/boom.gif" alt="explosion" style="position: absolute; display: none;">
+	</div>
+	<script type="text/javascript">
+		var player= {
+			left: 581.5,
+			top: 720
+		}
+		var enemies= [
+			{left: 100, top:0},
+			{left: 210, top:0},
+			{left: 320, top:0},
+			{left: 430, top:0},
+			{left: 550, top:0},
+			{left: 670, top:0},
+			{left: 790, top:0},
+			{left: 910, top:0}
+		] 
+		var missile= []
+
+		function sonidodeimpacto(){
+			var audio = document.getElementById("SonidoImpacto");
+			var clone = audio.cloneNode();
+			clone.currenttime= 0;
+			clone.play();
+		}
+		function drawPlayer(){
+			if(player.left <0) {
+				player.left = 0;
+			}
+			else if (player.left > 1280 - 117) {
+				player.left = 1280 - 117;
+			}
+
+			if(player.top < 480) {
+				player.top = 480;
+			} else if (player.top > 720 - 75) {
+				player.top = 720 - 75;
+			}
+
+			content = "<div class='players' style='left:"+player.left+"px; top:"+player.top+"px;'></div>";
+			document.getElementById("players").innerHTML =content; 
+		}
+
+		function moveEnemies(){
+			for(var idx=0; idx<enemies.length; idx++){
+				enemies[idx].top = enemies[idx].top + 5;
+				if (enemies[idx].top > 720 - 75){
+					enemies.splice(idx, 1);
+				}
+			}
+		}
+
+		function drawMissiles(){
+			content= "";
+			for(var idx=0; idx<missile.length; idx++){
+				content += "<div class='missile' style='left:"+missile[idx].left+"px; top:"+missile[idx].top+"px;'></div>"
+			}
+			document.getElementById("missile").innerHTML =content;
+		}
+
+		function MoveMissiles(){
+			for(var idx=0; idx<missile.length; idx++){
+				missile[idx].top = missile[idx].top - 25;
+			}
+		}
+
+		function explosion(left, top){
+			var boom = document.getElementById("img_boom");
+			boom.style.left = left +"px";
+			boom.style.top = top + "px";
+			boom.style.display = "block";
+			setTimeout(function(){
+				boom.style.display = "none";
+			}, 1000);
+			}
+
+		function drawShotMissile(){
+			for(var idx=0; idx<missile.length; idx++){
+				for(var i= 0; i<enemies.length; i++) {
+					if(missile[idx].top <= enemies[i].top + 75&&
+					missile[idx].top + 8 >= enemies[i].top &&
+					missile[idx].left <= enemies[i].left + 101&&
+					missile[idx].left + 8 >= enemies[i].left){
+						missile[idx].remove = true;
+						enemies[i].remove = true;
+						sonidodeimpacto();
+						explosion(enemies[i].left, enemies[i].top);
+						break;
+					}
+				}
+			}
+		}
+
+		function removeEntities(){
+			missile = missile.filter(function(m){
+				return !m.remove;
+			});
+			enemies = enemies.filter(function(e){
+				return !e.remove;
+			});
+		}
+
+		function drawEnemies(){
+            var content = "";
+            for (var idx = 0; idx < enemies.length; idx++) {
+                content += "<div class='enemy' style='left:" + enemies[idx].left + "px; top:" + enemies[idx].top + "px'></div>";
+            }
+            document.getElementById("enemies").innerHTML = content;
+        }
+
+		document.onkeydown = function(e) {
+			console.log(e)
+			if(e.keyCode == 37){ // izquierda
+				player.left = player.left - 20;
+			}
+			if(e.keyCode == 39){ // derecha
+				player.left = player.left + 20;
+			}
+			if(e.keyCode == 38){ // abajo
+				player.top = player.top - 20;
+			}
+			if(e.keyCode == 40){ // arriba
+				player.top = player.top + 20
+			}
+			if(e.keyCode == 32){ // disparar
+				missile.push( {left: (player.left+(117/2)) - 4, top: (player.top - 8) } )
+			}
+			console.log(missile);
+			drawPlayer()
+		}
+
+		function gameLoop(){
+			console.log("gameLoop is running")
+			drawPlayer();
+			moveEnemies();
+			drawEnemies();
+			drawMissiles();
+			MoveMissiles();
+			drawShotMissile();
+			removeEntities();
+			setTimeout(gameLoop, 50)
+		}
+		gameLoop();
+	</script>
+</body>
+</html>
